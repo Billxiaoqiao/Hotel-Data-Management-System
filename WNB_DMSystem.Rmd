@@ -1,0 +1,874 @@
+---
+title: "Group Assignment - Group 17"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: yes
+---
+
+# Part A1
+
+
+## Report - Approach Outline & ER diagram
+
+According to the requirement of WNB Hotel Group, a database for the revenue management optimization system was designed, which contains the information records of the guests, hotels, room and facility reservations, guest's transactions and invoices.
+
+![Entity Relation Diagram](er.png)
+
+The entity relation of this system will be established as follows:
+
+### Entities
+
+
+* **GUEST** ($\underline{Guest\_ID}$, Country, Phone_number(o), Email_address(o), 
+  
+  G_Street_address, First_name, Middle_name(o), Last_name)
+
+
+The GUEST entity represents each guest of the hotel with attributes: Guest_ID, Country, Phone_number(o), Email_address(o), G_Street_address, Name. Name is a composite attribute that can be subdivided into three component attributes: First_name, Middle_name(o), Last_name. A unique Guest_ID is created as the primary key since Name and G_Street_address attributes of the a guest may be duplicated. Email_address, Middle_name and Phone_number attributes are optional to fill in. Phone_number is a multi-valued attribute which could be home, work or cell numbers.
+
+
+* **HOTEL** ($\underline{Hotel\_ID}$, H_Name, Primary_phone_number, Web_address, 
+  
+  Street_number, Street_name, City, Postal_code, State)
+  
+The HOTEL entity stands for each hotel in the WNB Hotel Group with attributes: Hotel_ID, H_Name, Primary_phone_number, Web_address, H_Street_address.H_Street_address is a composite attribute that can be subdivided into five component attributes: Street_number, Street_name, City, Postal_code, State. Hotel_ID is established as the primary key of the HOTEL entity because H_Name and Primary_phone_number attributes may be duplicated. 
+
+
+* **BOOKING_CHANNEL** (Channel_type, Booking_fee(o), Available_room(o), 
+  
+  $\underline{\underline{Guest\_ID}, \underline{Hotel\_ID}, \underline{Reservation\_ID}}$)
+
+The BOOKING_CHANNEL entity is an associative entity with attributes: Channel_type, connecting with three entities: GUEST, HOTEL, and RESERVATION. Channel_type attribute can be the hotel booking system or a specific booking platform (e.g., Booking.com, Hotels.com, TripAdvisor.com, etc.). Channel_type attribute could be duplicated. Thus, the primary key of the BOOKING_CHANNEL entity is established as a composite primary key composed of Hotel_ID, Guest_ID, and Reservation_ID. 
+
+
+* **RESERVATION** ($\underline{Reservation\_ID}$, Expiration_date, 
+  
+  Credit_card_number, Preference(o), $\underline{\underline{Hotel\_ID}}$)
+  
+The RESERVATION entity is a vital entity associated with TRANSACTION, HOTEL, BOOKING CHANNEL, and ROOM, which records the guests' booking of rooms and facilities, and will be deleted after the booking process. The RESERVATION entity has attributes Reservation_ID, Preference(o), Credit_card. Credit_card attribute is a composite attribute that can be subdivided into five component attributes: Expiration_date, Credit_card_number. The length of Credit_card_number is at most 16 bits, therefore INT (16) is stated for the variable. Moreover, the RESERVATION entity has a multi-valued attribute: PREFERENCE, which stores the customer's room requirements and will be compared with the corresponding values of the ROOM entity. Hotels will cross out the RESERVATION entity after the customer completes the RESERVATION. 
+
+Apart from that, the value of the RESERVATION entity needs to be transferred into other entities. The Reservation_id, is established as the primary key to distinguish each reservation.
+
+
+* **ROOM** ($\underline{\underline{Hotel\_ID}, \underline{Reservation\_ID}}$, 
+  
+  Room_ID, NB_of_bed, Floor, Smoking_cond, Departure_date, Arrival_date)
+  
+The ROOM entity takes every room's accommodation records as a historical database. The ROOM entity is a associative entity with attributes Room_ID, NB_of_bed, Floor, Smoking_cond. The value of Room_ID attribute may be iterated with different reservation records. Therefore, ROOM is founded as an associative entity, which combines Hotel_ID and Reservation_ID as ROOM's primary key to confirm ROOM reservations and hotel information. The property NB_of_bed reflects the number of beds in one room. Meanwhile, Floor and Smoking_cond include the floor and smoking condition of each room.
+
+
+* **TRANSACTION** ($\underline{Transaction\_ID}$, O_service_type, O_price, 
+  
+  RA_service_type, RA_price, AR_service_type, AR_price, Room_rate, 
+  
+  $\underline{\underline{Guest\_ID}, \underline{Reservation\_ID}, \underline{Invoice\_ID}}$)
+  
+The TRANSACTION entity records billing information for accommodation or other expenses. The TRANSACTION entity has an attribute, the Transaction_ID. To uniquely identify each transaction (OTHER SERVICES, ROOM ADDITIONAL SERVICE, ANCILLARY REVENUE, and ROOM_rate), Transaction_ID is defined as the primary key in TRANSACTION entity.
+
+
+* **INVOICE** ($\underline{Invoice\_ID}$, Total_charge, Discription, Amount_of_charge, 
+  
+  Total_balance, Displayed_form, Payment_form, Amount_of_money, $\underline{\underline{Guest\_ID}}$)
+  
+The INVOICE entity represents the invoice of guests' each stay with attributes: Total_charge, Receipt_line_item, Total_balance, Displayed_form, Invoice_ID. Invoice_ID attribute is defined as the primary key to distinguish the invoices. Corresponding line items are generated separately and stored together in the displayed form based on the information sent from TRANSACTION and PAYMENT. The hotel will generate the invoice by Invoice_ID with the specific Displayed_form.
+
+
+### Relations
+
+![BOOKING_CHANNEL Relation](bc.png)
+
+ * **BOOKING_CHANNEL**
+
+The relationship between GUEST and BOOKING CHANNEL is 1:1 (one-to-one relationship). A guest makes one reservation only from one booking channel. Moreover, all customers must book through the channel (fully participate).
+
+ * **RESERVES_FROM**
+
+Each booking channel can make multiple reservations 1:N (one-to-many relationship): each order corresponds to only one booking channel, but a channel can accept more than one order. Not all booking channels are involved in making reservations, but all reservations are booked through the channel. If the customer cancels the order before checking in, the corresponding BOOKING_CHANNEL entity will be deleted by the system, and the reservation will be deleted accordingly.
+
+ * **ACCEPTS**
+ 
+Reservations to hotels are 1: N relation. The hotel provides at least two available rooms for guests to book on the platform for each booking channel. Besides, the hotel will pay specific booking fees to the channel every month. If the channel type is a hotel booking system, the two attributes will be null.
+
+![ROOM Relation](room.png)
+
+ * **HAS**
+
+Hotel accepts orders (1: N) and provides rooms owned by the hotel in the light of the preference of the order (1: N) .
+
+ * **INFORMS**
+ 
+ The reservation will inform the ROOM entity the guests' arrival and departure date, which will be stored in ROOM entity (1:N) .
+
+![TRANSACTION and relations](tr.png)
+
+ * **ROOM_ADDITIONAL_SERVICE, **
+ 
+   **ANCILLARY_REVENUE, **
+   
+   **RECORD_AS,**
+   
+   **OTHER_SERVICES**
+
+After the customer's reservation is completed, the reservation generates the TRANSACTIONs (including Room Additional Service, Ancillary revenue, and Room_rate) (1: N) . Other services (1: N) during guest stay is recorded as transaction as well, based on service type and price and identified by the Guest_ID. Once the guest's reservation is confirmed, the system will remove their reservation data.
+
+![INVOICE and relations](in.png)
+
+ * **GENERATES**
+
+The customer's charges are transferred from multiple transactions to INVOICE (1: N). The bill shows the amount needed to be paid and the description of each charged service. The total amount is generated according to the Applicable Tax.
+
+ * **PAYMENT**
+
+After each payment, the type and amount of money will be converted into Line_item and recorded in the corresponding invoice, containing all services (all listed inline items) and the total balance. After the guest pays all the expenses, the total balance is 0. Each guest will have one invoice (1: 1) for each stay.
+
+\newpage
+## Appendix - Part A1 SQL Code
+
+MySQL has more powerful database syntaxes than SQLite, such as add foreign keys after the tables have been created. Therefore, in this case, the 'RMySQL' package, which is a MySQL 'DBI' interface package suitable for R, is adopted.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, encoding='UTF-8')
+```
+
+```{r, message=FALSE, warning = FALSE}
+#Install DBI & RMySQL packages if haven't installed before
+#install.packages(c('DBI','RMySQL'))
+library(DBI)
+library(RMySQL)
+#connect to local MySQL server database 'WNB'
+my_connection <- RMySQL::dbConnect(MySQL(), dbname = 'WNB1', username = "root", 
+                                   password = 'rootpwd') 
+```
+
+There are several cross references in ER diagram. However, SQL execute by sentence not by chunk. If foreign keys are inserted during creating tables, there will be undefined foreign keys. Thus creating entity & relationship tables without foreign key is needed first.
+
+P.S. due to MySQL syntax, declaring the foreign keys exist as attributes in tables is also mandatory.
+
+### SQL Definition(DDL)
+
+* GUEST entity
+
+```{sql connection=my_connection}
+CREATE TABLE GUEST (
+ Guest_ID CHAR(10) NOT NULL,
+ Home_num INT(20), 
+ Work_num INT(20),
+ Cell_num INT(20),
+ First_name CHAR(100) NOT NULL, 
+ Last_name CHAR(100) NOT NULL,
+ Middle_name CHAR(100),
+ Country CHAR(100) NOT NULL,
+ G_Street_address CHAR(150) NOT NULL,
+ Email_address CHAR(100),
+ PRIMARY KEY(Guest_ID)
+); 
+```
+
+* BOOKING_CHANNEL entity
+
+```{sql connection=my_connection}
+CREATE TABLE BOOKING_CHANNEL (
+ Channel_type CHAR(20) NOT NULL,
+ Guest_ID CHAR(10) NOT NULL,
+ Reservation_ID CHAR(10) NOT NULL,
+ Hotel_ID CHAR(10) NOT NULL,
+ Booking_fee NUMERIC(10,2),
+ Available_room INT(3),
+ PRIMARY KEY(Guest_ID,Reservation_ID,Hotel_ID)
+); 
+```
+
+* HOTEL entity
+
+```{sql connection=my_connection}
+CREATE TABLE HOTEL (
+ Hotel_ID CHAR(10) NOT NULL,
+ Primary_phone_number INT(20) NOT NULL,
+ Post_code CHAR(20) NOT NULL,
+ H_Name CHAR(20) NOT NULL,
+ State TEXT(20) NOT NULL, 
+ City TEXT(20) NOT NULL,
+ Street_name CHAR(20) NOT NULL,
+ Street_number CHAR(20) NOT NULL,
+ Web_adress CHAR(100) NOT NULL,
+ PRIMARY KEY(Hotel_ID)
+); 
+```
+
+* ROOM entity
+
+```{sql connection=my_connection}
+CREATE TABLE ROOM (
+ Floor CHAR(3) NOT NULL,
+ Smoking_cond CHAR(3) NOT NULL,
+ NB_of_bed INT(1) NOT NULL,
+ Hotel_ID CHAR(10) NOT NULL,
+ Room_ID CHAR(10) NOT NULL,
+ Reservation_ID CHAR(10) NOT NULL,
+ Arrival_date DATE NOT NULL,
+ Departure_date DATE NOT NULL,
+ PRIMARY KEY(Hotel_ID, Reservation_ID)
+); 
+```
+
+* RESERVATION entity
+  * Credit card number is a sequence of up to 16 digit
+  
+```{sql connection=my_connection}
+CREATE TABLE RESERVATION (
+ Reservation_ID CHAR(10) NOT NULL,
+ Credit_card_number INT(16) NOT NULL,
+ Expiration_date DATE NOT NULL,
+ P_smoking_cond CHAR(3),
+ P_NB_of_bed INT(1),
+ P_floor CHAR(3),
+ Hotel_ID CHAR(10) NOT NULL,
+ PRIMARY KEY(Reservation_ID)
+); 
+```
+
+* TRANSACTION entity
+
+```{sql connection=my_connection}
+CREATE TABLE TRANSACTION(
+ Transaction_ID CHAR(10) NOT NULL,
+ O_service_type CHAR(10),
+ O_price NUMERIC(5,2),
+ RA_service_type CHAR(10),
+ RA_price NUMERIC(5,2),
+ AR_service_type CHAR(10),
+ AR_price NUMERIC(5,2),
+ Room_rate NUMERIC(5,2),
+ Guest_ID CHAR(10) NOT NULL,
+ Reservation_ID CHAR(10) NOT NULL,
+ Invoice_ID CHAR(10) NOT NULL,
+ PRIMARY KEY(Transaction_ID)
+)
+```
+
+* INVOICE entity
+
+```{sql connection=my_connection}
+CREATE TABLE INVOICE(
+ Invoice_ID CHAR(10) NOT NULL,
+ Discription TEXT(10) NOT NULL,
+ Amount_of_charge NUMERIC(11,2) NOT NULL,
+ Total_charge NUMERIC(11,2) NOT NULL,
+ Amount_of_money NUMERIC(11,2) NOT NULL,
+ Payment_form TEXT(10) NOT NULL,
+ Displayed_form CHAR(10) NOT NULL,
+ Total_balance NUMERIC(11,2) NOT NULL,
+ Guest_ID CHAR(10) NOT NULL,
+ PRIMARY KEY(Invoice_ID)
+);
+```
+
+After defining table, alter the attributes to foreign key constraints so that tables are having relations.
+
+```{sql connection=my_connection}
+ALTER TABLE BOOKING_CHANNEL ADD FOREIGN KEY(Guest_ID) references GUEST(Guest_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE BOOKING_CHANNEL ADD FOREIGN KEY(Reservation_ID) references 
+RESERVATION(Reservation_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE BOOKING_CHANNEL ADD FOREIGN KEY(Hotel_ID) references HOTEL(Hotel_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE ROOM ADD FOREIGN KEY(Hotel_ID) references HOTEL(Hotel_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE ROOM ADD FOREIGN KEY(Reservation_ID) 
+references RESERVATION(Reservation_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE RESERVATION ADD FOREIGN KEY(Hotel_ID) 
+references HOTEL(Hotel_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE TRANSACTION ADD FOREIGN KEY(Guest_ID) 
+references GUEST(Guest_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE TRANSACTION ADD FOREIGN KEY(Reservation_ID) 
+references RESERVATION(Reservation_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE TRANSACTION ADD FOREIGN KEY(Invoice_ID) 
+references INVOICE(Invoice_ID);
+```
+```{sql connection=my_connection}
+ALTER TABLE INVOICE ADD FOREIGN KEY(Guest_ID) references GUEST(Guest_ID);
+```
+
+
+### SQL Query(DQL)
+
+* **Preperation**
+
+Insert fake data for database clarifying:
+
+  * Insert data into GUEST table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.GUEST (Guest_ID, First_name, Last_name, Country, 
+G_Street_address, Email_address) VALUES ('A001', 'XZ', 'Q', 'China', 'hall', 
+'xzttxs@163.com');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.GUEST (Guest_ID, First_name, Last_name, Middle_name, Country,
+G_Street_address) VALUES ('A002', 'Jet', 'Cowboy', 'Space', 'Japan', 'bipop');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.GUEST (Guest_ID, First_name, Last_name, Middle_name, Country,
+G_Street_address) VALUES ('A003', 'Spike', 'Cowboy', 'Space', 'China', 'bipop');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.GUEST (Guest_ID, First_name, Last_name, Country, 
+G_Street_address) VALUES ('A004', 'Tom', 'Ford', 'UK', 'warwick');
+```
+
+  * Insert data into HOTEL table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.HOTEL (Hotel_ID, Primary_phone_number, Post_code, H_Name, 
+State, City, Street_name, Street_number, Web_adress) VALUES ('H001', '1234', 
+'CV1', '9Inn', 'MW', 'Coventry', '234R', '1', 'WWW.1.COM');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.HOTEL (Hotel_ID, Primary_phone_number, Post_code, H_Name, 
+State, City, Street_name, Street_number, Web_adress) VALUES ('H002', '1345', 
+'CV2', '4Inn', 'MW', 'London', '123R', '2', 'WWW.2.COM');
+```
+
+  * Insert data into RESERVATION table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.RESERVATION (Reservation_ID, Credit_card_number, 
+Expiration_date, P_smoking_cond, P_NB_of_bed, P_floor, Hotel_ID) 
+VALUES ('A1', '123', '2026-06-26', 'NO', '2', 'LO', 'H001');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.RESERVATION (Reservation_ID, Credit_card_number, 
+Expiration_date, P_smoking_cond, P_NB_of_bed, P_floor, Hotel_ID) 
+VALUES ('A2', '1345', '2026-06-26', 'NO', '1', 'HI', 'H002');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.RESERVATION (Reservation_ID, Credit_card_number, 
+Expiration_date, P_smoking_cond, P_NB_of_bed, P_floor, Hotel_ID) 
+VALUES ('A3', '1567', '2026-06-26', 'NO', '1', 'HI', 'H001');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.RESERVATION (Reservation_ID, Credit_card_number, 
+Expiration_date, P_smoking_cond, P_NB_of_bed, P_floor, Hotel_ID) 
+VALUES ('A4', '2346', '2026-06-24', 'YES', '2', 'LO', 'H001');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.RESERVATION (Reservation_ID, Credit_card_number, 
+Expiration_date, P_smoking_cond, P_NB_of_bed, P_floor, Hotel_ID) 
+VALUES ('A5', '567', '2026-06-28', 'NO', '2', 'LO', 'H002');
+```
+
+  * Insert data into BOOKING_CHANNEL table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.BOOKING_CHANNEL (Channel_type, Guest_ID, Reservation_ID, 
+Hotel_ID, Booking_fee, Available_room) 
+VALUES ('TA', 'A001', 'A1', 'H001', '10', '2');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.BOOKING_CHANNEL (Channel_type, Guest_ID, Reservation_ID, 
+Hotel_ID, Booking_fee, Available_room) 
+VALUES ('BC', 'A002', 'A2', 'H002', '20', '2');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.BOOKING_CHANNEL (Channel_type, Guest_ID, Reservation_ID, 
+Hotel_ID) 
+VALUES ('HBS', 'A003', 'A3', 'H001');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.BOOKING_CHANNEL (Channel_type, Guest_ID, Reservation_ID, 
+Hotel_ID, Booking_fee, Available_room) 
+VALUES ('TA', 'A004', 'A4', 'H001', '10', '2');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.BOOKING_CHANNEL (Channel_type, Guest_ID, Reservation_ID, 
+Hotel_ID) 
+VALUES ('HBS', 'A002', 'A5', 'H002');
+```
+
+  * Insert data into ROOM table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.ROOM (Floor, Smoking_cond, NB_of_bed, Hotel_ID, Room_ID, 
+Reservation_ID, Arrival_date, Departure_date) 
+VALUES ('HI', 'NO', '1', 'H002', '1001', 'A2', '2020-01-01', '2020-01-02');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.ROOM (Floor, Smoking_cond, NB_of_bed, Hotel_ID, Room_ID, 
+Reservation_ID, Arrival_date, Departure_date) 
+VALUES ('LO', 'NO', '2', 'H002', '101', 'A5', '2021-11-05', '2021-11-06');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.ROOM (Floor, Smoking_cond, NB_of_bed, Hotel_ID, Room_ID, 
+Reservation_ID, Arrival_date, Departure_date) 
+VALUES ('LO', 'YES', '2', 'H001', '101', 'A4', '2021-10-02', '2021-10-07');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.ROOM (Floor, Smoking_cond, NB_of_bed, Hotel_ID, Room_ID,
+Reservation_ID, Arrival_date, Departure_date) 
+VALUES ('HI', 'NO', '1', 'H001', '1002', 'A3', '2021-07-30', '2021-07-31');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.ROOM (Floor, Smoking_cond, NB_of_bed, Hotel_ID, Room_ID, 
+Reservation_ID, Arrival_date, Departure_date) 
+VALUES ('LO', 'NO', '2', 'H001', '102', 'A1', '2021-09-29', '2021-09-30');
+```
+
+  * Insert data into INVOICE table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.INVOICE (Invoice_ID, Discription, Amount_of_charge, Total_charge,
+Amount_of_money, Payment_form, Displayed_form, Total_balance, Guest_ID) 
+VALUES ('I1', 'ROOM_RATE-$100, SPA-$50', '150', '165', '165', 'Visa-$-165', 
+'Printed', '0', 'A001');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.INVOICE (Invoice_ID, Discription, Amount_of_charge, Total_charge,
+Amount_of_money, Payment_form, Displayed_form, Total_balance, Guest_ID) 
+VALUES ('I2', 'ROOM_RATE-$120, CAFE-$20', '140', '154', '154', 'Visa-$-154', 
+'Web_based', '0', 'A002');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.INVOICE (Invoice_ID, Discription, Amount_of_charge, Total_charge,
+Amount_of_money, Payment_form, Displayed_form, Total_balance, Guest_ID) 
+VALUES ('I3', 'ROOM_RATE-$135', '135', '148.5', '148.5', 'Visa-$-148.5', 
+'Printed', '0', 'A003');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.INVOICE (Invoice_ID, Discription, Amount_of_charge, Total_charge,
+Amount_of_money, Payment_form, Displayed_form, Total_balance, Guest_ID)
+VALUES ('I4', 'ROOM_RATE-$110', '110', '121', '121', 'Mastercard-$-121', 
+'Printed', '0', 'A004');
+```   
+```{sql connection=my_connection}
+INSERT INTO WNB1.INVOICE (Invoice_ID, Discription, Amount_of_charge, Total_charge,
+Amount_of_money, Payment_form, Displayed_form, Total_balance, Guest_ID) 
+VALUES ('I5', 'ROOM_RATE-$125, MINI_BAR-$10', '135', '148.5', '148.5', 
+'Visa-$-148.5', 'Web_based', '0', 'A002');
+```
+
+  * Insert data into TRANSACTION table
+  
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, O_service_type, O_price, Guest_ID,
+Reservation_ID, Invoice_ID) VALUES ('T1', 'spa', '50', 'A001', 'A1', 'I1');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, O_service_type, O_price, Guest_ID,
+Reservation_ID, Invoice_ID) VALUES ('T2', 'cafe', '20', 'A002', 'A2', 'I2');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, Room_rate, Guest_ID, 
+Reservation_ID, Invoice_ID) VALUES ('T3', '100', 'A001', 'A1', 'I1');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, Room_rate, Guest_ID, 
+Reservation_ID, Invoice_ID) VALUES ('T4', '120', 'A002', 'A2', 'I2');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, Room_rate, Guest_ID, 
+Reservation_ID, Invoice_ID) VALUES ('T5', '135', 'A003', 'A3', 'I3');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, Room_rate, Guest_ID, 
+Reservation_ID, Invoice_ID) VALUES ('T6', '110', 'A004', 'A4', 'I4');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, Room_rate, Guest_ID, 
+Reservation_ID, Invoice_ID) VALUES ('T7', '125', 'A002', 'A5', 'I5');
+```
+```{sql connection=my_connection}
+INSERT INTO WNB1.TRANSACTION (Transaction_ID, RA_service_type, RA_price, 
+Guest_ID, Reservation_ID, Invoice_ID) 
+VALUES ('T8', 'mini_bar', '10', 'A002', 'A5', 'I5');
+```
+
+
+* **Query(business questions solving)**
+
+Provide the SQL queries as follows that satisfy business goals`(Reservation information is deleted after reservation, thus Reservation_ID selection must via entity ROOM)`:
+
+ *  `Use SUM '+' to get total spend`
+  
+ *  `Use IFNULL to convert null data to '0'`
+  
+#### The total spent for the customer for a particular stay (checkout invoice).
+
+```{sql connection=my_connection}
+SELECT SUM(IFNULL(TRANSACTION.O_price,0)) + SUM(IFNULL(TRANSACTION.RA_Price,0)) +
+SUM(IFNULL(TRANSACTION.AR_Price,0)) + SUM(IFNULL(TRANSACTION.Room_rate,0)) 
+AS Total_Spent
+FROM TRANSACTION, ROOM
+WHERE TRANSACTION.Guest_ID = 'A001'
+AND TRANSACTION.Reservation_ID = ROOM.Reservation_ID
+AND ROOM.Arrival_date = DATE '2021-09-29'
+AND ROOM.Departure_date = DATE '2021-09-30';
+```
+
+#### The most valuable customers in (a) the last two months, (b) past year and (c) from the beginning of the records.
+
+ *  `Use CONCAT to form two selected columns to one`
+  
+ *  `Use DATE_SUB(CURRENT_DATE(), INTERVAL 0 DAY) to get current date`
+  
+ *  `Use LIMIT 5 and ORDER BY DESC to get the biggest 5 Customer_value numbers`
+  
+(a) The last two months:
+
+```{sql connection=my_connection}
+SELECT CONCAT(GUEST.First_name,' ',IFNULL(GUEST.Middle_name,''),' ',GUEST.Last_name) 
+AS Customer_name, GUEST.Guest_ID AS ID, SUM(IFNULL(TRANSACTION.O_price,0)) +
+SUM(IFNULL(TRANSACTION.RA_Price,0)) + SUM(IFNULL(TRANSACTION.AR_Price,0)) +
+SUM(IFNULL(TRANSACTION.Room_rate,0)) AS Customer_value
+FROM TRANSACTION, ROOM, GUEST
+WHERE TRANSACTION.Reservation_ID = ROOM.Reservation_ID
+AND TRANSACTION.Guest_ID = GUEST.Guest_ID
+AND ROOM.Arrival_date > DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY)
+AND ROOM.Departure_date < DATE_SUB(CURRENT_DATE(), INTERVAL 0 DAY)
+GROUP BY ID
+ORDER BY Customer_value DESC
+LIMIT 5;
+```
+
+(b) Past year
+
+```{sql connection=my_connection}
+SELECT CONCAT(GUEST.First_name,' ',IFNULL(GUEST.Middle_name,''),' ',GUEST.Last_name) 
+AS Customer_name, GUEST.Guest_ID AS ID, SUM(IFNULL(TRANSACTION.O_price,0)) +
+SUM(IFNULL(TRANSACTION.RA_Price,0)) + SUM(IFNULL(TRANSACTION.AR_Price,0)) +
+SUM(IFNULL(TRANSACTION.Room_rate,0)) AS Customer_value
+FROM TRANSACTION, ROOM, GUEST
+WHERE TRANSACTION.Reservation_ID = ROOM.Reservation_ID
+AND TRANSACTION.Guest_ID = GUEST.Guest_ID
+AND ROOM.Arrival_date > DATE_SUB(CURRENT_DATE(), INTERVAL 365 DAY)
+AND ROOM.Departure_date < DATE_SUB(CURRENT_DATE(), INTERVAL 0 DAY)
+GROUP BY ID
+ORDER BY Customer_value DESC
+LIMIT 5;
+```
+
+(c) From the beginning of the records:
+
+```{sql connection=my_connection}
+SELECT CONCAT(GUEST.First_name,' ',IFNULL(GUEST.Middle_name,''),' ',GUEST.Last_name) 
+AS Customer_name, GUEST.Guest_ID AS ID, SUM(IFNULL(TRANSACTION.O_price,0)) +
+SUM(IFNULL(TRANSACTION.RA_Price,0)) + SUM(IFNULL(TRANSACTION.AR_Price,0)) +
+SUM(IFNULL(TRANSACTION.Room_rate,0)) AS Customer_value
+FROM TRANSACTION, ROOM, GUEST
+WHERE TRANSACTION.Reservation_ID = ROOM.Reservation_ID
+AND TRANSACTION.Guest_ID = GUEST.Guest_ID
+GROUP BY ID
+ORDER BY Customer_value DESC
+LIMIT 5;
+```
+
+#### Which are the top countries where our customers come from ? 
+
+ *  `Use DISTINCT to select unique IDs`
+  
+ *  `Use IS NOT NULL to exclude guests cancel the reservation`
+
+```{sql connection=my_connection}
+SELECT GUEST.Country AS Country, COUNT(DISTINCT GUEST.Guest_ID) AS Customer_number
+FROM GUEST, TRANSACTION
+WHERE GUEST.Guest_ID = TRANSACTION.Guest_ID
+AND TRANSACTION.Transaction_ID IS NOT NULL
+GROUP BY Country;
+```
+
+#### How much did the hotel pay in referral fees for each of the platforms that we have contracted with?
+
+ *  `Use IS NOT NULL to except hotel booking system`
+
+```{sql connection=my_connection}
+SELECT BOOKING_CHANNEL.Hotel_ID AS Hotel_ID, BOOKING_CHANNEL.Channel_type 
+AS Channel_name, SUM(BOOKING_CHANNEL.Booking_fee) AS Total_referral_fee
+FROM BOOKING_CHANNEL
+WHERE BOOKING_CHANNEL.Booking_fee IS NOT NULL
+GROUP BY BOOKING_CHANNEL.Hotel_ID, BOOKING_CHANNEL.Channel_type
+```
+
+#### What is the utilization rate for each hotel (that is the average billable days of a hotel specified as the average utilization of room bookings for the last 12 months) 
+
+ *  `Use concat to count rooms only in one hotel`
+
+```{sql connection=my_connection}
+SELECT ROOM.Hotel_ID 
+AS Hotel_ID, (SUM(Departure_date-Arrival_date)*100)/
+(COUNT(DISTINCT CONCAT(Room_ID, Hotel_ID))*365) AS Utilization_rate_percent
+FROM ROOM
+WHERE ROOM.Arrival_date > DATE_SUB(CURRENT_DATE(), INTERVAL 365 DAY)
+AND ROOM.Departure_date < DATE_SUB(CURRENT_DATE(), INTERVAL 0 DAY)
+GROUP BY ROOM.Hotel_ID;
+```
+
+#### Calculate the Customer Value in terms of total spent for each customer before the current booking.
+
+ *  `Use departure date < current date to except current booking`
+
+```{sql connection=my_connection}
+SELECT CONCAT(GUEST.First_name,' ',IFNULL(GUEST.Middle_name,''),' ',GUEST.Last_name) 
+AS Customer_name, GUEST.Guest_ID AS ID, SUM(IFNULL(TRANSACTION.O_price,0)) +
+SUM(IFNULL(TRANSACTION.RA_Price,0)) + SUM(IFNULL(TRANSACTION.AR_Price,0)) +
+SUM(IFNULL(TRANSACTION.Room_rate,0)) AS Customer_value
+FROM TRANSACTION, GUEST, ROOM
+WHERE GUEST.Guest_ID = 'A001'
+AND TRANSACTION.Guest_ID = GUEST.Guest_ID
+AND TRANSACTION.Reservation_ID = ROOM.Reservation_ID
+AND ROOM.Departure_date < DATE_SUB(CURRENT_DATE(), INTERVAL 0 DAY);
+```
+
+Disconnect database after query.
+
+```{r disconnection, message=FALSE}
+dbDisconnect(my_connection)
+```
+
+
+\newpage
+# Part A2
+
+
+* SQLite is a local database integrated in the application. Moreover, SQLite is very convenient to transplant and apply when facing with small amount of data. Therefore, SQLite is adopted to the dealer data analysis.
+
+```{r, include=FALSE}
+library(RSQLite)
+my_connection1 <- RSQLite::dbConnect(RSQLite::SQLite(),"Vehicle.db") 
+```
+
+## Logical Data Schema
+
+  * **Customers**($\underline{Cust\_id}$)
+  * **Vehicles**($\underline{Vehicle\_id}$, $\underline{\underline{Cust\_id}}$, $\underline{\underline{Dealer\_name}}$, V_price, Purchase_date)
+  * **Dealers**($\underline{Dealer\_name}$)
+  * **Vehicle_services**($\underline{Transaction\_id}$, $\underline{\underline{Cust\_id}}$, $\underline{\underline{Dealer\_name}}$, $\underline{\underline{Vehicle\_id}}$, Service_package(O), Nominal_s_fee(O), V_mileage, Service_date)
+  
+![ER Diagram](A2ER.png)
+  
+The entities of the schema will be established as follows:
+
+ * **Customer**
+ 
+The CUSTOMER entity represents every guest purchasing vehicles from the brand. The CUSTOMER_ID is created as the primary key for uniquely identifying the guests.
+
+ * **Vehicle**
+ 
+The Vehicle stores every vehicle of the brand which the dealer has sold. The primary key of this entity is Vehicle_id. The attributes V_price, Purchase_date are stored to record the specific conditions of the vehicle.  Moreover, Customer_ID and Dealer_name are the foreign keys to identify the vehicle's seller and owner.
+
+ * **Dealer**
+ 
+The DEALER records every single dealer of the brand. The primary key of Dealer is Dealer_name.
+
+ * **Vehicle_service**
+ 
+The Vehicle_service represents every maintenance service provided by the dealers. The primary key of this entity is Transaction_id. Meanwhile, Customer_id, Dealer_name, and Vehicle_id are used as foreign keys relating to each service. The entity also stores V_mileage and Service_date to record the customer's vehicle service and vehicle status.
+
+\newpage
+## Appendix - Part A2 SQL Code
+
+### SQL Definition(DDL)
+
+
+```{sql connection=my_connection1}
+-- Customers 
+CREATE TABLE 'Customers' (
+  'Cust_id' CHAR PRIMARY KEY
+) ; 
+```
+
+```{sql  connection=my_connection1}
+-- Vehicles
+CREATE TABLE 'Vehicles' (
+  'Vehicle_id' CHAR PRIMARY KEY, 
+  'V_price' DECIMAL(10,2) NOT NULL,
+  'Purchase_date' DATE NOT NULL,
+  'Cust_id' CHAR NOT NULL,
+  'Dealer_name' CHAR NOT NULL,
+  FOREIGN KEY ('Cust_id') 
+    REFERENCES Customers ('Cust_id'),
+  FOREIGN KEY ('Dealer_name') 
+    REFERENCES Dealer ('Dealer_name')
+) ; 
+```
+```{sql connection=my_connection1}
+-- Dealers
+CREATE TABLE 'Dealers' (
+  'Dealer_name'  CHAR PRIMARY KEY
+) ; 
+```
+```{sql  connection=my_connection1}
+-- Vehiclev Services
+CREATE TABLE 'Vehicle_services' 
+(
+  'Transaction_id' CHAR PRIMARY KEY,
+  'Service_packag'  CHAR,
+  'Nominal_s_fee' DECIMAL(10,2), 
+  'V_mileage' INT NOT NULL,
+  'Service_date' DATE NOT NULL,
+  'Cust_id' CHAR NOT NULL,
+  'Dealer_name'  CHAR NOT NULL,
+  'Vehicle_id' CHAR NOT NULL,
+  FOREIGN KEY ('Cust_id') 
+    REFERENCES Customers ('Cust_id'),
+  FOREIGN KEY ('Dealer_name') 
+    REFERENCES Dealer ('Dealer_name'),
+  FOREIGN KEY ('Vehicle_id') 
+    REFERENCES Vehicles ('Vehicle_id')
+) ;
+```
+
+
+### SQL Query(DQL)
+
+* **Preperation**
+
+Insert fake data for database clarifying:
+
+
+```{sql connection=my_connection1}
+INSERT INTO Customers 
+VALUES (1),(2),(3),(4),(5);
+```
+
+```{sql connection=my_connection1}
+INSERT INTO Vehicles 
+VALUES ("3VW", 27440, '2018-05-04', "1", "A" ),
+("1GY", 32347, '2018-05-16', "2", "B"),
+("WVG", 23395, '2018-07-26', "3", "C"),
+("WA1", 26202, '2018-05-11', "4", "A"),
+("3GY", 23397, '2018-04-30', "5", "C"),
+("SCF", 38526, '2018-05-11', "1", "B");
+```
+
+```{sql connection=my_connection1}
+INSERT INTO Dealers
+VALUES ("A"),("B"),("C")
+```
+
+```{sql connection=my_connection1}
+INSERT INTO Vehicle_services
+VALUES ("T1", NULL ,2417, 5902, '2019-12-01', "1", "A", "3VW"), 
+("T2",NULL ,3998, 7676, '2020-12-01', "1", "A", "3VW"), 
+("T3",4983,NULL , 8456, '2021-07-11', "1", "B", "3VW"), 
+("T4",NULL ,3966, 6197, '2019-03-06', "2", "B", "1GY"), 
+("T5",NULL ,4606, 7676, '2020-03-06', "2", "C", "1GY"), 
+("T6", 4983,NULL , 6197, '2019-07-11', "3", "C", "WVG"), 
+("T7",NULL ,5968, 7676, '2020-07-11', "3", "C", "WVG"), 
+("T8",NULL ,4606,7676, '2019-06-27', "4", "A", "WA1" ), 
+("T9", 6306,NULL , 8456, '2020-06-27', "4", "C", "WA1"), 
+("T10",NULL ,7090, 9386, '2021-06-27', "4", "C", "WA1"), 
+("T11",3681, NULL,7676, '2019-09-10', "5", "C", "3GY"), 
+("T12",4606,NULL ,8456, '2020-09-10', "5",  "C", "3GY"),
+("T13",2091,NULL , 5230, '2019-12-25', "1", "B","SCF"), 
+("T14",NULL ,4983, 6197, '2020-12-25', "1", "A", "SCF");
+```
+
+
+* **Query(business questions solving)**
+
+#### a. How many customers have stopped bringing their cars after the first encounter with the dealer?
+
+ * `Create a virtual table to record the customers' first contact with the dealer`
+ 
+```{sql connection=my_connection1}
+CREATE VIEW First_service AS
+SELECT Cust_id, Dealer_name, MIN(Service_date) As First_s_date
+FROM Vehicle_services
+GROUP BY Cust_id;
+```
+
+ * `Create a virtual table to record the customers' first contact with the dealer`
+ 
+```{sql connection=my_connection1}
+CREATE VIEW Same_dealer_s_times AS
+SELECT First_service.Cust_id, First_service.Dealer_name, 
+COUNT(Vehicle_services.Dealer_name) AS Same_dealer_s_times
+FROM First_service, Vehicle_services
+WHERE First_service.Dealer_name = Vehicle_services.Dealer_name 
+AND First_service.Cust_id = Vehicle_services.Cust_id
+GROUP BY First_service.Cust_id;
+```
+
+```{sql connection=my_connection1}
+SELECT Dealer_name, COUNT(Cust_id) AS Num_of_default_cust
+FROM Same_dealer_s_times
+WHERE Same_dealer_s_times = 1
+GROUP BY Dealer_name;
+```
+
+
+#### b. What is the relationship between the price of the service and the age of the car in terms of
+  
+  * actual car age (e.g., mileage) and 
+  
+```{sql  connection=my_connection1}
+
+CREATE VIEW Nominal_mileage AS
+SELECT V_mileage, Nominal_s_fee
+FROM Vehicle_services
+WHERE Vehicle_services.Nominal_s_fee IS NOT NULL;
+
+```
+
+```{sql connection=my_connection1}
+
+SELECT 
+CASE WHEN V_mileage < 25000 THEN '0-25000'
+     WHEN V_mileage BETWEEN 25001 AND 50000 THEN '25001-50000'
+     WHEN V_mileage BETWEEN 50001 AND 75000 THEN '50001-75000'
+     WHEN V_mileage BETWEEN 75001 AND 100000 THEN '75001-100000'
+     WHEN V_mileage BETWEEN 75001 AND 100000 THEN '75001-100000'
+     WHEN V_mileage BETWEEN 100001 AND 125000 THEN '100001-125000'
+     WHEN V_mileage BETWEEN 125001 AND 150000 THEN '125001-150000'
+     WHEN V_mileage BETWEEN 150001 AND 200000 THEN '150001-200000'
+     END AS Mileage, AVG(Nominal_s_fee) AS Avg_nominal_s_fee
+FROM Nominal_mileage
+GROUP BY Mileage;
+
+```
+
+  * time with the current owner?
+
+```{sql  connection=my_connection1}
+
+CREATE VIEW Nominal_year AS
+SELECT 
+ROUND((JulianDay(Vehicle_services.Service_date)
+- JulianDay(Vehicles.Purchase_date))/365, 2) AS Year_with_the_current_owner,
+Vehicle_services.Nominal_s_fee
+FROM Vehicle_services, Vehicles
+WHERE Vehicle_services.Vehicle_id = Vehicles.Vehicle_id 
+AND Vehicle_services.Nominal_s_fee IS NOT NULL;
+
+```
+
+```{sql connection=my_connection1}
+SELECT 
+CASE WHEN Year_with_the_current_owner < 3 THEN 'less than 3 years'
+     WHEN Year_with_the_current_owner BETWEEN 3 AND 5 THEN '3 to 5 years'
+     WHEN Year_with_the_current_owner BETWEEN 6 AND 10 THEN '6 to 10 years'
+     WHEN Year_with_the_current_owner >10 THEN 'more than 10 years' 
+     END AS Year_interval, AVG(Nominal_s_fee) AS Avg_nominal_s_fee
+FROM Nominal_year
+GROUP BY Year_interval;
+```
+
+```{r disconnect, message=FALSE}
+dbDisconnect(my_connection1)
+```
+
+# Appendix - Part C & Part D
